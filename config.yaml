@@ -1,0 +1,2 @@
+METADATA_FILE : 'Project_Data/Metadata.csv'
+EMBEDDING_FILE : 'Output/embeddings.pickle'
