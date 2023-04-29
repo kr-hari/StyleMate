@@ -33,7 +33,10 @@ def text_preprocessing(text: str):
 
 def get_data_from_file(filename:str):
 
-    with open(filenam, 'rb') as file:
+    with open(filename, 'rb') as file:
         data = pickle.load(file)
-
     return data
+
+
+def get_top_n_indices(array, top_n):
+    return array.argsort()[-top_n:][::-1]
