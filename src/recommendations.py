@@ -7,6 +7,7 @@ import string
 import pickle 
 import yaml
 import os
+import torch 
 
 from helpers import text_preprocessing, get_data_from_file, get_top_n_indices
 
@@ -35,28 +36,39 @@ class Recommender():
         print("INFO: Initializing Model")
         self.model = SentenceTransformer('msmarco-distilbert-base-dot-prod-v3')
         print("INFO: Creating embeddings")
-        self.embeddings = self.create_embeddings(column=primary_column)
-        self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
+        self.embeddings = self.get_embeddings(column=primary_column)
+        # self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
 
 
     def preprocess_metadata(self) -> None:
 
         self.metadata['description'] = self.metadata['description'].apply(lambda x: text_preprocessing(eval(x)[0]))
 
-    def create_embeddings(self, column) -> np.array:
+    def get_embeddings(self, column) -> np.array:
 
-        embeddings = self.model.encode(self.metadata[column].tolist(), device='cuda') 
-        embeddings = np.asarray(embeddings.astype('float32'))
-        self.save_embeddings(embeddings)
-        return embeddings
-    
-    def save_embeddings(self, embeddings) -> None:
+        # If embedding is locally saved already, load it 
+        try:
+            with open(self.params['EMBEDDING_FILE'], 'rb') as file:
+                embeddings = pickle.load(file)
+            print("INFO : Loaded Product Embeddings")
+            return embeddings
+        
+        # If embedding is not locally available, create embeddings
+        except:
+            print("INFO : Creating Embeddings")
+            if torch.cuda.is_available():
+                embeddings = self.model.encode(self.metadata[column].tolist(), device='cuda') 
+            else:
+                embeddings = self.model.encode(self.metadata[column].tolist())
+            embeddings = np.asarray(embeddings.astype('float32'))   
+            
+            print("INFO: Saving embeddings")
+            if not os.path.exists(os.path.dirname(self.params['EMBEDDING_FILE'])):
+                os.mkdir(os.path.dirname(self.params['EMBEDDING_FILE']))
+            with open(self.params['EMBEDDING_FILE'],'wb') as file:
+                pickle.dump(embeddings, file, protocol=pickle.HIGHEST_PROTOCOL)
 
-        print("INFO: Saving embeddings")
-        if not os.path.exists(os.path.dirname(self.params['EMBEDDING_FILE'])):
-            os.mkdir(os.path.dirname(self.params['EMBEDDING_FILE']))
-        with open(self.params['EMBEDDING_FILE'],'wb') as file:
-            pickle.dump(embeddings, file, protocol=pickle.HIGHEST_PROTOCOL)
+            return embeddings
 
     def return_most_similar(self, query):
 
@@ -65,7 +77,7 @@ class Recommender():
         similarity = np.dot(self.embeddings,query_vector.T)
         top_items = similarity.flatten().argsort()[-self.top_n:][::-1]
         print(self.metadata['title'].iloc[top_items])
-        return top_items
+        return list(top_items), list(self.metadata['title'].iloc[top_items])
 
 
     def character_similarity(self, character_list:list, method:int = 1):
