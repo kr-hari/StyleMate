@@ -8,7 +8,7 @@ import pickle
 import yaml
 import os
 
-from helpers import text_preprocessing
+from helpers import text_preprocessing, get_data_from_file, get_top_n_indices
 
 from sentence_transformers import SentenceTransformer
 
@@ -36,6 +36,7 @@ class Recommender():
         self.model = SentenceTransformer('msmarco-distilbert-base-dot-prod-v3')
         print("INFO: Creating embeddings")
         self.embeddings = self.create_embeddings(column=primary_column)
+        self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
 
 
     def preprocess_metadata(self) -> None:
@@ -67,7 +68,53 @@ class Recommender():
         return top_items
 
 
+    def character_similarity(self, character_list:list, method:int = 1):
 
+        # Method 1 - Join all characteristics to make an expanded query
+        if method == 1 :
+            character_query = ' '.join(character_list)
+            character_query_vector = self.model.encode(character_query)
+            similarity = np.dot(self.embeddings,character_query_vector.T)
+            # top_items =  get_top_n_indices(similarity.flatten(), self.top_n)       
+            return similarity
+
+        # Method 2 - Rank items based on individual characteristics
+        elif method == 2:
+            similarity_list =[]
+            for characteristic in character_list:
+                character_query_vector = self.model.encode(character_query)
+                similarity = np.dot(self.embeddings,character_query_vector.T)
+                # top_items_list.append(get_top_n_indices(similarity.flatten(), top_n=200)) 
+                similarity_list.append(similarity.flatten()) 
+            agg_similarity = np.array(similarity_list.sum(axis=0))
+            return agg_similarity
+        
+    def feature_similarity(self, feature_imp):
+
+        agg_feature_poitiveness = np.zeros(self.product_feature_positiveness.shape()[0])
+        for ind, imp in enumerate(feature_imp):
+            agg_feature_poitiveness += imp*self.product_feature_positiveness[ind]
+        return agg_feature_poitiveness
+
+
+    def return_most_similar_v1(self, query:str, character_list:list, character_method:int, feature_imp):
+
+        print("INFO: Retrieving items for query")
+        query_vector = self.model.encode([query])
+        query_similarity = np.dot(self.embeddings,query_vector.T)
+        character_similarity = self.character_similarity(character_list, method=1)
+        feature_similarity = self.feature_similarity(feature_imp)
+        return 
+
+        return top_items
+                 
+
+    def get_top_items_for_features(top_n):
+        
+        self
+        final_product_embeddings = self.product_feature_ratings.mean(axis=1)
+        top_item_ind = get_top_n_indices(final_product_embeddings, top_n=5)
+        return top_item_ind
 
 
 
