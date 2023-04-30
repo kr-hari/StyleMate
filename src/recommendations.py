@@ -8,9 +8,10 @@ import pickle
 import yaml
 import os
 import torch 
+import pdb 
 
 from helpers import text_preprocessing, get_data_from_file, get_top_n_indices
-
+from category_query_matches import find_matching_categories_fuzzy
 from sentence_transformers import SentenceTransformer
 
 
@@ -36,6 +37,8 @@ class Recommender():
         print("INFO: Initializing Model")
         self.model = SentenceTransformer('msmarco-distilbert-base-dot-prod-v3')
         self.embeddings = self.get_embeddings(column=primary_column)
+        self.category_dict_path = self.params['CATEGORY_DICT_PATH']
+
         # self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
 
 
@@ -76,7 +79,8 @@ class Recommender():
         similarity = np.dot(self.embeddings,query_vector.T)
         top_items = similarity.flatten().argsort()[-self.top_n:][::-1]
         print(self.metadata['title'].iloc[top_items])
-        return list(top_items), list(self.metadata['title'].iloc[top_items])
+        # return list(top_items), list(self.metadata['title'].iloc[top_items])
+        return list(top_items), list(self.metadata['asin'].iloc[top_items])
 
 
     def character_similarity(self, character_list:list, method:int = 1):
@@ -108,18 +112,28 @@ class Recommender():
         return agg_feature_poitiveness
 
 
-    def return_most_similar_v1(self, query:str, character_list:list, character_method:int, feature_imp):
+    def return_most_similar_v1(self, query:str, character_list:list, character_method:int, feature_imp:list = None):
 
         print("INFO: Retrieving items for query")
-        query_vector = self.model.encode([query])
-        query_similarity = np.dot(self.embeddings,query_vector.T)
-        character_similarity = self.character_similarity(character_list, method=1)
-        feature_similarity = self.feature_similarity(feature_imp)
-        return 
-
-        return top_items
+        filtered_asins = find_matching_categories_fuzzy(
+            query=query, category_dict_file_path=self.category_dict_path, n=10)
+        
+        asin_ind_mapping = get_data_from_file(self.params['ASIN_IND_MAPPING_DICT'])
+        filtered_indices = [asin_ind_mapping[asin] for asin in filtered_asins]
+        # filtered_indices = [i for i in range(5550)]
+        query_vector = self.model.encode([query + ' '.join(character_list)])
+        # pdb.set_trace()
+        query_similarity = np.dot(self.embeddings[filtered_indices],query_vector.T).flatten()
+        query_similarity  /= np.linalg.norm(query_similarity)
+        final_similarity = query_similarity
+        
+        top_filtered_indices = get_top_n_indices(final_similarity, 10)
+        indices = [filtered_indices[int(i)] for i in top_filtered_indices]
+        # pdb.set_trace()
+        # feature_similarity = self.feature_similarity(feature_imp)
+        # return indices
+        return self.metadata['title'].iloc[indices].to_list()
                  
-
     def get_top_items_for_features(top_n):
         
         self
@@ -129,10 +143,9 @@ class Recommender():
 
 
 
-
-
 if __name__ == '__main__':
 
-    query = 'men socks'
+    query = "shoes"
+    character_list = ['Loose', 'cotton']
     recommender = Recommender(primary_column='description')
-    recommender.return_most_similar(query=query)
+    print(recommender.return_most_similar_v1(query=query, character_list=character_list, character_method=1))   

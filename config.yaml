@@ -1,2 +1,4 @@
 METADATA_FILE : 'Project_Data/Metadata.csv'
 EMBEDDING_FILE : 'Output/embeddings.pickle'
+CATEGORY_DICT_PATH : 'Output/category_dict_.pickle'
+ASIN_IND_MAPPING_DICT : 'Output/asin_mapping.pickle'
