@@ -40,6 +40,7 @@ class Recommender():
         self.category_dict_path = self.params['CATEGORY_DICT_PATH']
 
         # self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
+        self.image_similar_product_dict = get_data_from_file(self.params['IMAGE_SIMILARITY_DICT'])
 
 
     def preprocess_metadata(self) -> None:
@@ -134,12 +135,16 @@ class Recommender():
         # return indices
         return self.metadata['title'].iloc[indices].to_list()
                  
-    def get_top_items_for_features(top_n):
+    def get_image_based_similar_items(self, product_asin:str):
+
+            return self.image_similar_product_dict[product_asin]
+
+    # def get_top_items_for_features(top_n):
         
-        self
-        final_product_embeddings = self.product_feature_ratings.mean(axis=1)
-        top_item_ind = get_top_n_indices(final_product_embeddings, top_n=5)
-        return top_item_ind
+    #     self
+    #     final_product_embeddings = self.product_feature_ratings.mean(axis=1)
+    #     top_item_ind = get_top_n_indices(final_product_embeddings, top_n=5)
+    #     return top_item_ind
 
 
 
@@ -148,4 +153,5 @@ if __name__ == '__main__':
     query = "shoes"
     character_list = ['Loose', 'cotton']
     recommender = Recommender(primary_column='description')
-    print(recommender.return_most_similar_v1(query=query, character_list=character_list, character_method=1))   
+    # print(recommender.return_most_similar_v1(query=query, character_list=character_list, character_method=1))   
+    print(recommender.get_image_based_similar_items(product_asin='B0027WH4YO'))

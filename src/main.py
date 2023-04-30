@@ -14,6 +14,12 @@ def query_results(query):
     # print(recommendations)
     return [str(i) for i in recommendation_titles]
 
+@app.route("/get_query_results/<asin>")
+def query_results(asin):
+    recommendation_indices = recommender.get_image_based_similar_items(product_asin=asin)
+    # print(recommendations)
+    return [str(i) for i in recommendation_indices]
+
 
 @app.route("/")
 def home():
