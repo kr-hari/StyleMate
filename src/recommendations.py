@@ -35,7 +35,6 @@ class Recommender():
         self.preprocess_metadata()
         print("INFO: Initializing Model")
         self.model = SentenceTransformer('msmarco-distilbert-base-dot-prod-v3')
-        print("INFO: Creating embeddings")
         self.embeddings = self.get_embeddings(column=primary_column)
         # self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
 
