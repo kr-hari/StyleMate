@@ -1,2 +1,3 @@
 METADATA_FILE : 'Project_Data/Metadata.csv'
 EMBEDDING_FILE : 'Output/embeddings.pickle'
+IMAGE_SIMILARITY_DICT : 'Output/Image_similar_items_dict.pickle'

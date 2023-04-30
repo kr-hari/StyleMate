@@ -38,6 +38,7 @@ class Recommender():
         print("INFO: Creating embeddings")
         self.embeddings = self.get_embeddings(column=primary_column)
         # self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
+        self.image_similar_product_dict = get_data_from_file(self.params['IMAGE_SIMILARITY_DICT'])
 
 
     def preprocess_metadata(self) -> None:
@@ -121,12 +122,16 @@ class Recommender():
         return top_items
                  
 
-    def get_top_items_for_features(top_n):
+    def get_image_based_similar_items(self, product_asin:str):
+
+            return self.image_similar_product_dict[product_asin]
+
+    # def get_top_items_for_features(top_n):
         
-        self
-        final_product_embeddings = self.product_feature_ratings.mean(axis=1)
-        top_item_ind = get_top_n_indices(final_product_embeddings, top_n=5)
-        return top_item_ind
+    #     self
+    #     final_product_embeddings = self.product_feature_ratings.mean(axis=1)
+    #     top_item_ind = get_top_n_indices(final_product_embeddings, top_n=5)
+    #     return top_item_ind
 
 
 
@@ -136,4 +141,5 @@ if __name__ == '__main__':
 
     query = 'men socks'
     recommender = Recommender(primary_column='description')
-    recommender.return_most_similar(query=query)
+    # recommender.return_most_similar(query=query)
+    print(recommender.get_image_based_similar_items(product_asin='B0027WH4YO'))
