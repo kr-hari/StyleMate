@@ -8,6 +8,7 @@ from textblob import TextBlob
 from nltk.stem import WordNetLemmatizer
 from collections import Counter
 from helpers import get_data_from_file
+import pdb
 
 # Define a function to preprocess the query
 def preprocess_query(query):
@@ -32,13 +33,13 @@ def preprocess_query(query):
 
 
 # Define a function that returns a list of all the ASIN ids associated with the top matching categories.
-def find_matching_categories_fuzzy(query, category_dict, n=5):
+def find_matching_categories_fuzzy(query, category_dict_file_path, n=5):
     # Preprocess the query
     query = preprocess_query(query)
     # Tokenize the query
     query_tokens = set(query.split())
     #Load the category_dict
-    category_dict = get_data_from_file('category_dict.pickle')
+    category_dict = get_data_from_file(category_dict_file_path)
     # Find matching categories
     matching_categories = []
     for category, asins in category_dict.items():
@@ -54,3 +55,10 @@ def find_matching_categories_fuzzy(query, category_dict, n=5):
     for category, asins in top_categories:
         matching_indices.extend(asins)
     return matching_indices
+
+
+if __name__  == '__main__':
+
+    query = "shirt"
+    category_dict_file_path = './Output/category_dict_.pickle'
+    print(find_matching_categories_fuzzy(query=query, category_dict_file_path=category_dict_file_path, n=10))
