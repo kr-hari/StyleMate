@@ -10,7 +10,7 @@ import os
 import torch 
 import pdb 
 
-from helpers import text_preprocessing, get_data_from_file, get_top_n_indices
+from helpers import text_preprocessing, get_data_from_file, get_top_n_indices, query_preprocessing
 from category_query_matches import find_matching_categories_fuzzy
 from sentence_transformers import SentenceTransformer
 
@@ -38,6 +38,7 @@ class Recommender():
         self.model = SentenceTransformer('msmarco-distilbert-base-dot-prod-v3')
         self.embeddings = self.get_embeddings(column=primary_column)
         self.category_dict_path = self.params['CATEGORY_DICT_PATH']
+        self.product_image_indicator = get_data_from_file(self.params['IMAGE_IND'])
 
         # self.product_feature_positiveness = get_data_from_file(self.params['product_feature_ratings'])
         self.image_similar_product_dict = get_data_from_file(self.params['IMAGE_SIMILARITY_DICT'])
@@ -73,15 +74,30 @@ class Recommender():
 
             return embeddings
 
-    def return_most_similar(self, query):
+    def return_most_similar(self, query, top_n):
 
         print("INFO: Retrieving items for query")
+        # Preprocess Query adn find embeddings
+        query = query_preprocessing(query)
+        print("Preprocessed_query : {}".format(query))
         query_vector = self.model.encode([query])
+        # Find top_n similar products
         similarity = np.dot(self.embeddings,query_vector.T)
-        top_items = similarity.flatten().argsort()[-self.top_n:][::-1]
-        print(self.metadata['title'].iloc[top_items])
+        top_n = int(top_n)
+        top_items = similarity.flatten().argsort()[-3*top_n:][::-1]     # Find 3*top_n similar product as product without images will be removed later
+        final_items_asin = []
+        final_items_indices = []
+        asins = self.metadata['asin'].iloc[top_items]
+        for item,asin in zip(top_items, asins):
+            # Only if image of the product is present, display the product
+            if self.product_image_indicator[asin]:
+                final_items_asin.append(asin)
+                final_items_indices.append(item)
+                if len(final_items_asin)>=top_n:
+                    break
+        print(self.metadata['title'].iloc[final_items_indices].to_list())
         # return list(top_items), list(self.metadata['title'].iloc[top_items])
-        return list(top_items), list(self.metadata['asin'].iloc[top_items])
+        return list(top_items), final_items_asin
 
 
     def character_similarity(self, character_list:list, method:int = 1):
@@ -150,8 +166,10 @@ class Recommender():
 
 if __name__ == '__main__':
 
-    query = "shoes"
-    character_list = ['Loose', 'cotton']
-    recommender = Recommender(primary_column='description')
+    query = "men's shirt"
+    character_list = ['Loose', 'leather']
+    recommender = Recommender(primary_column='product_detail')
+    recommender.return_most_similar(query=query, top_n=10)
+
     # print(recommender.return_most_similar_v1(query=query, character_list=character_list, character_method=1))   
-    print(recommender.get_image_based_similar_items(product_asin='B0027WH4YO'))
+    # print(recommender.get_image_based_similar_items(product_asin='B0027WH4YO'))

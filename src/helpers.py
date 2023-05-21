@@ -5,13 +5,13 @@ from nltk.stem import WordNetLemmatizer
 from spellchecker import SpellChecker
 
 import pickle
-
+import pdb
 
 # Run the below code if you are running for the first time run below code
 # nltk.download()
 
-
-
+spell = SpellChecker()
+lemmatizer = WordNetLemmatizer()
 
 def text_preprocessing(text: str):
     
@@ -50,13 +50,21 @@ def query_preprocessing(text: str):
     # Remove Punctuation
     # text = "".join([char for char in text if char not in string.punctuation])
     words = word_tokenize(text)  
+    lemmatized = [lemmatizer.lemmatize(word) for word in words]
     # Remove Stopwords
     # stop_words = stopwords.words('english')
     # filtered_words = [word for word in words if word not in stop_words]
-    filtered_words = [spell.correction(word) in words]
+    filtered_words = [spell.correction(word) for word in lemmatized]
     ## Stemming
     # porter = PorterStemmer()
     # stemmed = [porter.stem(word) for word in filtered_words]
     # Lemmatization
-    lemmatizer = WordNetLemmatizer()
-    lemmatized = [lemmatizer.lemmatize(word) for word in filtered_words]
+    # pdb.set_trace()
+    
+    
+    return ' '.join(filtered_words)
+
+
+if __name__ == '__main__':
+
+    query_preprocessing("men's shirt")
